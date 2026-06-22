@@ -32,6 +32,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -140,6 +142,8 @@ fun TranscriptionSetupScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
     val isTranscribing by viewModel.isTranscribing.collectAsStateWithLifecycle()
     val logs by viewModel.transcriptionLogs.collectAsStateWithLifecycle()
     val progressStage by viewModel.progressStage.collectAsStateWithLifecycle()
@@ -573,7 +577,11 @@ fun TranscriptionSetupScreen(
             }
         } else {
             Button(
-                onClick = { viewModel.startTranscription(context) },
+                onClick = {
+                    keyboardController?.hide()
+                    focusManager.clearFocus()
+                    viewModel.startTranscription(context)
+                },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = SleekPrimary, contentColor = Color.White),
                 shape = RoundedCornerShape(24.dp),
@@ -1135,13 +1143,22 @@ fun SettingsDialog(
     val serverUrlVal by viewModel.serverUrl.collectAsStateWithLifecycle()
     val providerSettings by viewModel.providerSettings.collectAsStateWithLifecycle()
 
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+
     val providerVal by viewModel.llmProviderInput.collectAsStateWithLifecycle()
     val modelVal by viewModel.llmModelInput.collectAsStateWithLifecycle()
     val apiKeyVal by viewModel.llmApiKeyInput.collectAsStateWithLifecycle()
 
     var tempUrl by remember { mutableStateOf(serverUrlVal) }
 
-    Dialog(onDismissRequest = onDismiss) {
+    val dismissWithKeyboard = {
+        keyboardController?.hide()
+        focusManager.clearFocus()
+        onDismiss()
+    }
+
+    Dialog(onDismissRequest = dismissWithKeyboard) {
         Card(
             colors = CardDefaults.cardColors(containerColor = SleekSurface),
             shape = RoundedCornerShape(24.dp),
@@ -1162,7 +1179,7 @@ fun SettingsDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("Setelan Server & LLM", fontWeight = FontWeight.Bold, color = SleekPrimary, fontSize = 16.sp)
-                    IconButton(onClick = onDismiss) {
+                    IconButton(onClick = dismissWithKeyboard) {
                         Icon(Icons.Filled.Close, contentDescription = "Dismiss", tint = SleekTextSoft)
                     }
                 }
@@ -1187,6 +1204,8 @@ fun SettingsDialog(
 
                 Button(
                     onClick = {
+                        keyboardController?.hide()
+                        focusManager.clearFocus()
                         viewModel.updateServerUrl(tempUrl)
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = SleekPrimaryContainer, contentColor = SleekNavy),
@@ -1269,7 +1288,7 @@ fun SettingsDialog(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     OutlinedButton(
-                        onClick = onDismiss,
+                        onClick = dismissWithKeyboard,
                         border = BorderStroke(1.dp, SleekOutline),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = SleekTextSoft),
                         shape = RoundedCornerShape(12.dp),
@@ -1280,6 +1299,8 @@ fun SettingsDialog(
 
                     Button(
                         onClick = {
+                            keyboardController?.hide()
+                            focusManager.clearFocus()
                             viewModel.saveServerSettings()
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = SleekPrimary, contentColor = Color.White),
@@ -1469,10 +1490,18 @@ fun RawJsonImportDialog(
     viewModel: VibeViewModel,
     onDismiss: () -> Unit
 ) {
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
     var rawText by remember { mutableStateOf("") }
     var titleVal by remember { mutableStateOf("Import Subtitle Manual") }
 
-    Dialog(onDismissRequest = onDismiss) {
+    val dismissWithKeyboard = {
+        keyboardController?.hide()
+        focusManager.clearFocus()
+        onDismiss()
+    }
+
+    Dialog(onDismissRequest = dismissWithKeyboard) {
         Card(
             colors = CardDefaults.cardColors(containerColor = SleekSurface),
             shape = RoundedCornerShape(24.dp),
@@ -1493,7 +1522,7 @@ fun RawJsonImportDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("Impor JSON Subtitle", fontWeight = FontWeight.Bold, color = SleekPrimary, fontSize = 16.sp)
-                    IconButton(onClick = onDismiss) {
+                    IconButton(onClick = dismissWithKeyboard) {
                         Icon(Icons.Filled.Close, contentDescription = "Close Dialog", tint = SleekTextSoft)
                     }
                 }
@@ -1540,7 +1569,7 @@ fun RawJsonImportDialog(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     OutlinedButton(
-                        onClick = onDismiss,
+                        onClick = dismissWithKeyboard,
                         border = BorderStroke(1.dp, SleekOutline),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = SleekTextSoft),
                         shape = RoundedCornerShape(12.dp),
@@ -1551,6 +1580,8 @@ fun RawJsonImportDialog(
 
                     Button(
                         onClick = {
+                            keyboardController?.hide()
+                            focusManager.clearFocus()
                             viewModel.loadRawSubtitleJson(rawText, titleVal)
                             onDismiss()
                         },
